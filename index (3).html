@@ -1,0 +1,1122 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Asignaciones · Congregación</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,400;0,700;1,400&family=Lato:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --navy:        #1A2744;
+      --navy-mid:    #253560;
+      --navy-light:  #3A4F82;
+      --gold:        #C49A28;
+      --gold-light:  #E0B84A;
+      --cream:       #F5F4F0;
+      --white:       #FFFFFF;
+      --green:       #2A8A52;
+      --green-bg:    #EBF7F0;
+      --red:         #C03D30;
+      --red-bg:      #FDF0EE;
+      --gray:        #6B7280;
+      --gray-light:  #E5E7EB;
+      --gray-mid:    #D1D5DB;
+      --text:        #1F2937;
+      --text-muted:  #6B7280;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Lato', sans-serif;
+      background: var(--cream);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ── Header ─────────────────────────────────── */
+    .app-header {
+      background: var(--navy);
+      color: #fff;
+      padding: 0 1.5rem;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 10px rgba(26,39,68,.35);
+    }
+
+    .app-title {
+      font-family: 'Merriweather', serif;
+      font-size: 1.0rem;
+      letter-spacing: .02em;
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+    }
+
+    .app-title .sep { color: var(--gold-light); opacity: .7; }
+
+    .btn-add-person {
+      background: var(--gold);
+      color: var(--navy);
+      border: none;
+      padding: .45rem 1rem;
+      border-radius: 6px;
+      font-family: 'Lato', sans-serif;
+      font-weight: 700;
+      font-size: .825rem;
+      cursor: pointer;
+      transition: background .15s;
+      display: flex;
+      align-items: center;
+      gap: .35rem;
+    }
+    .btn-add-person:hover { background: var(--gold-light); }
+
+    /* ── Stats banner ───────────────────────────── */
+    .stats-banner {
+      background: var(--navy-mid);
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+    }
+
+    .stat {
+      padding: .8rem .5rem;
+      text-align: center;
+      border-right: 1px solid rgba(255,255,255,.08);
+    }
+    .stat:last-child { border-right: none; }
+
+    .stat-n {
+      font-family: 'Merriweather', serif;
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: #fff;
+      line-height: 1;
+    }
+    .stat-n.s-ok      { color: #6EE7A0; }
+    .stat-n.s-overdue { color: #FCA5A5; }
+    .stat-n.s-none    { color: #FCD34D; }
+
+    .stat-lbl {
+      font-size: .65rem;
+      color: rgba(255,255,255,.55);
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      margin-top: .25rem;
+    }
+
+    /* ── Main ───────────────────────────────────── */
+    .main {
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 1.25rem 1.25rem 4rem;
+    }
+
+    /* ── Filter bar ─────────────────────────────── */
+    .filter-bar {
+      margin-bottom: 1.1rem;
+      display: flex;
+      flex-direction: column;
+      gap: .65rem;
+    }
+
+    .tabs {
+      display: flex;
+      gap: .4rem;
+      flex-wrap: wrap;
+    }
+
+    .tab {
+      padding: .3rem .85rem;
+      border-radius: 20px;
+      border: 1.5px solid var(--gray-light);
+      background: var(--white);
+      color: var(--gray);
+      font-family: 'Lato', sans-serif;
+      font-size: .78rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all .15s;
+    }
+    .tab.active                  { background: var(--navy); border-color: var(--navy); color: #fff; }
+    .tab.t-overdue.active        { background: var(--red);  border-color: var(--red); }
+    .tab.t-ok.active             { background: var(--green); border-color: var(--green); }
+
+    .search-row {
+      display: flex;
+      gap: .5rem;
+    }
+
+    .search-input {
+      flex: 1;
+      padding: .5rem .875rem;
+      border: 1.5px solid var(--gray-light);
+      border-radius: 7px;
+      font-family: 'Lato', sans-serif;
+      font-size: .875rem;
+      background: var(--white);
+      color: var(--text);
+      outline: none;
+      transition: border-color .15s;
+    }
+    .search-input:focus { border-color: var(--navy-light); }
+
+    .btn-ico {
+      padding: .5rem .75rem;
+      border: 1.5px solid var(--gray-light);
+      border-radius: 7px;
+      background: var(--white);
+      cursor: pointer;
+      font-size: .95rem;
+      color: var(--gray);
+      transition: all .15s;
+      white-space: nowrap;
+    }
+    .btn-ico:hover { border-color: var(--navy); color: var(--navy); }
+
+    /* ── Person card ────────────────────────────── */
+    .people-list {
+      display: flex;
+      flex-direction: column;
+      gap: .7rem;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 3.5rem 1rem;
+    }
+    .empty-state h3 {
+      font-family: 'Merriweather', serif;
+      font-size: 1.05rem;
+      color: var(--navy);
+      margin-bottom: .4rem;
+    }
+    .empty-state p { color: var(--text-muted); font-size: .875rem; }
+
+    .person-card {
+      background: var(--white);
+      border-radius: 10px;
+      padding: 1rem 1.125rem;
+      border: 1.5px solid var(--gray-light);
+      position: relative;
+      overflow: hidden;
+      transition: box-shadow .15s;
+    }
+    .person-card:hover { box-shadow: 0 3px 14px rgba(0,0,0,.08); }
+
+    /* left accent bar */
+    .person-card::before {
+      content: '';
+      position: absolute;
+      left: 0; top: 0; bottom: 0;
+      width: 4px;
+    }
+    .s-overdue.person-card::before { background: var(--red); }
+    .s-ok.person-card::before      { background: var(--green); }
+    .s-none.person-card::before    { background: var(--gray-mid); }
+
+    .card-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: .75rem;
+    }
+
+    .person-name {
+      font-weight: 700;
+      font-size: .95rem;
+      color: var(--navy);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .person-last {
+      font-size: .75rem;
+      color: var(--text-muted);
+      margin-top: .15rem;
+    }
+
+    .days-badge { flex-shrink: 0; text-align: right; }
+
+    .days-num {
+      font-family: 'Merriweather', serif;
+      font-size: 1.3rem;
+      font-weight: 700;
+      line-height: 1;
+    }
+    .s-overdue .days-num { color: var(--red); }
+    .s-ok .days-num      { color: var(--green); }
+    .s-none .days-num    { color: var(--gray); }
+
+    .days-unit {
+      font-size: .62rem;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      color: var(--text-muted);
+    }
+
+    /* status chip */
+    .status-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: .25rem;
+      font-size: .68rem;
+      font-weight: 700;
+      padding: .15rem .5rem;
+      border-radius: 10px;
+      margin-top: .35rem;
+      letter-spacing: .02em;
+    }
+    .chip-overdue { background: var(--red-bg); color: var(--red); }
+    .chip-ok      { background: var(--green-bg); color: var(--green); }
+    .chip-none    { background: var(--gray-light); color: var(--gray); }
+
+    /* Days progress bar */
+    .bar-wrap {
+      margin: .75rem 0 .5rem;
+      position: relative;
+    }
+
+    .bar-track {
+      height: 6px;
+      background: var(--gray-light);
+      border-radius: 4px;
+      overflow: visible;
+      position: relative;
+    }
+
+    .bar-fill {
+      height: 100%;
+      border-radius: 4px;
+      transition: width .4s ease;
+      position: relative;
+    }
+    .s-overdue .bar-fill { background: var(--red); }
+    .s-ok .bar-fill      { background: var(--green); }
+    .s-none .bar-fill    { background: var(--gray-mid); width: 0 !important; }
+
+    /* 40-day threshold marker */
+    .bar-marker {
+      position: absolute;
+      top: -4px;
+      bottom: -4px;
+      width: 2px;
+      background: rgba(100,116,139,.35);
+      border-radius: 2px;
+      left: 50%; /* 40 days out of 80 = 50% */
+      pointer-events: none;
+    }
+    .bar-marker::after {
+      content: '40d';
+      position: absolute;
+      top: -16px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: .55rem;
+      color: var(--text-muted);
+      white-space: nowrap;
+    }
+
+    /* card actions */
+    .card-actions {
+      display: flex;
+      gap: .4rem;
+      align-items: center;
+      justify-content: flex-end;
+    }
+
+    .btn-sm {
+      padding: .3rem .65rem;
+      border-radius: 5px;
+      border: none;
+      font-family: 'Lato', sans-serif;
+      font-size: .75rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all .15s;
+    }
+    .btn-assign {
+      background: var(--navy);
+      color: #fff;
+    }
+    .btn-assign:hover { background: var(--navy-light); }
+
+    .btn-hist {
+      background: var(--gray-light);
+      color: var(--text);
+    }
+    .btn-hist:hover { background: var(--gray-mid); }
+
+    .btn-edit {
+      background: transparent;
+      color: var(--gray);
+      border: 1px solid var(--gray-light) !important;
+      padding: .3rem .55rem;
+    }
+    .btn-edit:hover { color: var(--navy); border-color: var(--navy) !important; }
+
+    /* ── Modal ──────────────────────────────────── */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(26,39,68,.55);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 200;
+      padding: 1rem;
+      animation: fadeIn .15s ease;
+    }
+    @keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
+
+    .modal {
+      background: var(--white);
+      border-radius: 12px;
+      width: 100%;
+      max-width: 420px;
+      box-shadow: 0 20px 60px rgba(0,0,0,.22);
+      animation: slideUp .2s ease;
+      max-height: 90vh;
+      display: flex;
+      flex-direction: column;
+    }
+    @keyframes slideUp {
+      from { transform: translateY(14px); opacity: 0; }
+      to   { transform: translateY(0);    opacity: 1; }
+    }
+
+    .modal-header {
+      padding: 1.1rem 1.4rem .9rem;
+      border-bottom: 1px solid var(--gray-light);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+
+    .modal-title {
+      font-family: 'Merriweather', serif;
+      font-size: .95rem;
+      color: var(--navy);
+    }
+
+    .modal-close {
+      background: none;
+      border: none;
+      font-size: 1.15rem;
+      cursor: pointer;
+      color: var(--gray);
+      line-height: 1;
+      padding: .2rem;
+    }
+    .modal-close:hover { color: var(--text); }
+
+    .modal-body {
+      padding: 1.1rem 1.4rem;
+      overflow-y: auto;
+      flex: 1;
+    }
+
+    .modal-footer {
+      padding: .9rem 1.4rem;
+      border-top: 1px solid var(--gray-light);
+      display: flex;
+      gap: .5rem;
+      justify-content: flex-end;
+      flex-shrink: 0;
+    }
+
+    .form-group { margin-bottom: .9rem; }
+    .form-group:last-child { margin-bottom: 0; }
+
+    .form-label {
+      display: block;
+      font-size: .8rem;
+      font-weight: 700;
+      color: var(--navy);
+      margin-bottom: .35rem;
+    }
+
+    .form-input, .form-select, .form-textarea {
+      width: 100%;
+      padding: .5rem .875rem;
+      border: 1.5px solid var(--gray-light);
+      border-radius: 7px;
+      font-family: 'Lato', sans-serif;
+      font-size: .875rem;
+      color: var(--text);
+      background: var(--white);
+      outline: none;
+      transition: border-color .15s, box-shadow .15s;
+    }
+    .form-input:focus,
+    .form-select:focus,
+    .form-textarea:focus {
+      border-color: var(--navy-light);
+      box-shadow: 0 0 0 3px rgba(58,79,130,.1);
+    }
+    .form-textarea { resize: vertical; min-height: 76px; }
+
+    .btn-save {
+      background: var(--gold);
+      color: var(--navy);
+      border: none;
+      padding: .5rem 1.1rem;
+      border-radius: 6px;
+      font-family: 'Lato', sans-serif;
+      font-weight: 700;
+      font-size: .85rem;
+      cursor: pointer;
+      transition: background .15s;
+    }
+    .btn-save:hover { background: var(--gold-light); }
+
+    .btn-cancel {
+      background: var(--gray-light);
+      color: var(--text);
+      border: none;
+      padding: .5rem .9rem;
+      border-radius: 6px;
+      font-family: 'Lato', sans-serif;
+      font-weight: 600;
+      font-size: .85rem;
+      cursor: pointer;
+      transition: background .15s;
+    }
+    .btn-cancel:hover { background: var(--gray-mid); }
+
+    .btn-danger {
+      background: var(--red-bg);
+      color: var(--red);
+      border: none;
+      padding: .5rem .9rem;
+      border-radius: 6px;
+      font-family: 'Lato', sans-serif;
+      font-weight: 700;
+      font-size: .85rem;
+      cursor: pointer;
+      margin-right: auto;
+      transition: all .15s;
+    }
+    .btn-danger:hover { background: var(--red); color: #fff; }
+
+    /* History list */
+    .hist-item {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      padding: .7rem 0;
+      border-bottom: 1px solid var(--gray-light);
+      gap: .5rem;
+    }
+    .hist-item:last-child { border-bottom: none; }
+
+    .hist-date {
+      font-weight: 700;
+      font-size: .875rem;
+      color: var(--navy);
+    }
+    .hist-type { font-size: .775rem; color: var(--text-muted); margin-top: .1rem; }
+    .hist-notes { font-size: .72rem; color: var(--text-muted); font-style: italic; margin-top: .1rem; }
+
+    .btn-del-hist {
+      background: none;
+      border: none;
+      color: var(--gray-mid);
+      cursor: pointer;
+      font-size: .9rem;
+      padding: .15rem .3rem;
+      flex-shrink: 0;
+      transition: color .15s;
+    }
+    .btn-del-hist:hover { color: var(--red); }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      bottom: 1.5rem;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--navy);
+      color: #fff;
+      padding: .6rem 1.25rem;
+      border-radius: 8px;
+      font-size: .85rem;
+      z-index: 400;
+      animation: toastIn .2s ease;
+      box-shadow: 0 4px 18px rgba(0,0,0,.22);
+      white-space: nowrap;
+    }
+    @keyframes toastIn {
+      from { opacity: 0; transform: translate(-50%, 10px); }
+      to   { opacity: 1; transform: translate(-50%, 0); }
+    }
+
+    /* Sort label */
+    .list-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: .6rem;
+    }
+    .list-count {
+      font-size: .75rem;
+      color: var(--text-muted);
+    }
+
+    /* ── Responsive ─────────────────────────────── */
+    @media (max-width: 480px) {
+      .app-header { padding: 0 1rem; }
+      .main { padding: 1rem 1rem 4rem; }
+      .stat-n { font-size: 1.3rem; }
+      .stat-lbl { font-size: .58rem; }
+      .days-num { font-size: 1.1rem; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══════════════ HEADER ═══════════════ -->
+<header class="app-header">
+  <div class="app-title">
+    📖 Asignaciones <span class="sep">·</span> Congregación
+  </div>
+  <button class="btn-add-person" id="btnAddPerson">+ Persona</button>
+</header>
+
+<!-- ═══════════════ STATS ════════════════ -->
+<div class="stats-banner">
+  <div class="stat">
+    <div class="stat-n" id="stTotal">0</div>
+    <div class="stat-lbl">Total</div>
+  </div>
+  <div class="stat">
+    <div class="stat-n s-ok" id="stOk">0</div>
+    <div class="stat-lbl">Al día</div>
+  </div>
+  <div class="stat">
+    <div class="stat-n s-overdue" id="stOverdue">0</div>
+    <div class="stat-lbl">Vencidos</div>
+  </div>
+  <div class="stat">
+    <div class="stat-n s-none" id="stNone">0</div>
+    <div class="stat-lbl">Sin asig.</div>
+  </div>
+</div>
+
+<!-- ═══════════════ MAIN ══════════════════ -->
+<main class="main">
+
+  <div class="filter-bar">
+    <div class="tabs">
+      <button class="tab active"      data-filter="all">Todos</button>
+      <button class="tab t-overdue"   data-filter="overdue">⚠ Vencidos (+40 días)</button>
+      <button class="tab t-ok"        data-filter="ok">✓ Al día</button>
+      <button class="tab"             data-filter="none">○ Sin asignación</button>
+    </div>
+    <div class="search-row">
+      <input type="text" class="search-input" id="searchInput" placeholder="Buscar persona...">
+      <button class="btn-ico" id="btnExport" title="Exportar JSON">📤 Exportar</button>
+      <button class="btn-ico" id="btnImport" title="Importar JSON">📥 Importar</button>
+      <input type="file" id="fileImport" accept=".json" style="display:none">
+    </div>
+  </div>
+
+  <div class="list-meta">
+    <span class="list-count" id="listCount"></span>
+  </div>
+
+  <div class="people-list" id="peopleList"></div>
+
+</main>
+
+<!-- ═══════════════ MODAL: PERSONA ════════════════ -->
+<div class="modal-overlay" id="modalPerson" style="display:none">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 class="modal-title" id="mPersonTitle">Nueva Persona</h2>
+      <button class="modal-close" data-close="modalPerson">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label" for="personName">Nombre completo</label>
+        <input type="text" class="form-input" id="personName" placeholder="Ej: Juan Carlos Pérez" autocomplete="off">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-danger" id="btnDeletePerson" style="display:none">🗑 Eliminar</button>
+      <button class="btn-cancel" data-close="modalPerson">Cancelar</button>
+      <button class="btn-save" id="btnSavePerson">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ MODAL: ASIGNACIÓN ════════════ -->
+<div class="modal-overlay" id="modalAssign" style="display:none">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 class="modal-title" id="mAssignTitle">Registrar Asignación</h2>
+      <button class="modal-close" data-close="modalAssign">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label" for="aDate">Fecha de la asignación</label>
+        <input type="date" class="form-input" id="aDate">
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="aType">Tipo</label>
+        <select class="form-select" id="aType">
+          <option value="Lectura de la Biblia">Lectura de la Biblia</option>
+          <option value="Discurso">Discurso</option>
+          <option value="Tema">Tema</option>
+          <option value="Necesidades de la Congregación">Necesidades de la Congregación</option>
+          <option value="Seamos Mejores Maestros">Seamos Mejores Maestros</option>
+          <option value="Estudio de La Atalaya">Estudio de La Atalaya</option>
+          <option value="Otro">Otro</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="aNotes">Notas (opcional)</label>
+        <textarea class="form-textarea" id="aNotes" placeholder="Ej: punto 2, capítulo 3..."></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" data-close="modalAssign">Cancelar</button>
+      <button class="btn-save" id="btnSaveAssign">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ MODAL: HISTORIAL ══════════════ -->
+<div class="modal-overlay" id="modalHistory" style="display:none">
+  <div class="modal" style="max-width:460px">
+    <div class="modal-header">
+      <h2 class="modal-title" id="mHistTitle">Historial</h2>
+      <button class="modal-close" data-close="modalHistory">✕</button>
+    </div>
+    <div class="modal-body" id="histBody"></div>
+  </div>
+</div>
+
+<!-- ═══════════════ SCRIPT ════════════════ -->
+<script>
+// ──────────────────────────────────────────────────
+//  CONSTANTES Y ESTADO
+// ──────────────────────────────────────────────────
+const STORAGE_KEY  = 'jwTracker_v1';
+const OVERDUE_DAYS = 40;
+const BAR_MAX_DAYS = 80; // 100% of the bar = 80 days
+
+let state = { people: [], filter: 'all', search: '' };
+let editingId  = null;   // id of person being edited
+let assigningId = null;  // id of person receiving assignment
+let historyId   = null;  // id of person whose history is open
+
+// ──────────────────────────────────────────────────
+//  PERSISTENCIA
+// ──────────────────────────────────────────────────
+function loadData() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) state.people = JSON.parse(raw).people || [];
+  } catch(e) { state.people = []; }
+}
+
+function saveData() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify({ people: state.people }));
+}
+
+// ──────────────────────────────────────────────────
+//  UTILIDADES
+// ──────────────────────────────────────────────────
+function uid() {
+  return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+}
+
+function todayStr() {
+  return new Date().toISOString().split('T')[0];
+}
+
+function daysSince(dateStr) {
+  if (!dateStr) return null;
+  const d = new Date(dateStr + 'T00:00:00');
+  const n = new Date(); n.setHours(0,0,0,0);
+  return Math.round((n - d) / 86400000);
+}
+
+function fmtDate(ds) {
+  if (!ds) return '—';
+  const d = new Date(ds + 'T00:00:00');
+  return d.toLocaleDateString('es-AR', { day:'numeric', month:'short', year:'numeric' });
+}
+
+function lastAssignment(person) {
+  if (!person.assignments?.length) return null;
+  return [...person.assignments].sort((a,b) => b.date.localeCompare(a.date))[0];
+}
+
+function personStatus(person) {
+  const last = lastAssignment(person);
+  if (!last) return 'none';
+  return daysSince(last.date) >= OVERDUE_DAYS ? 'overdue' : 'ok';
+}
+
+function personDays(person) {
+  const last = lastAssignment(person);
+  return last ? daysSince(last.date) : null;
+}
+
+function esc(str) {
+  return String(str)
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;');
+}
+
+// ──────────────────────────────────────────────────
+//  RENDER
+// ──────────────────────────────────────────────────
+function renderStats() {
+  const all     = state.people;
+  const ok      = all.filter(p => personStatus(p) === 'ok');
+  const overdue = all.filter(p => personStatus(p) === 'overdue');
+  const none    = all.filter(p => personStatus(p) === 'none');
+
+  document.getElementById('stTotal').textContent   = all.length;
+  document.getElementById('stOk').textContent      = ok.length;
+  document.getElementById('stOverdue').textContent = overdue.length;
+  document.getElementById('stNone').textContent    = none.length;
+}
+
+function renderList() {
+  const container = document.getElementById('peopleList');
+
+  // filter
+  let list = [...state.people];
+  if (state.filter === 'overdue') list = list.filter(p => personStatus(p) === 'overdue');
+  else if (state.filter === 'ok') list = list.filter(p => personStatus(p) === 'ok');
+  else if (state.filter === 'none') list = list.filter(p => personStatus(p) === 'none');
+
+  // search
+  if (state.search) {
+    const q = state.search.toLowerCase();
+    list = list.filter(p => p.name.toLowerCase().includes(q));
+  }
+
+  // sort: overdue (most days first) → none → ok (most days first)
+  list.sort((a, b) => {
+    const sa = personStatus(a), sb = personStatus(b);
+    const da = personDays(a),   db = personDays(b);
+    const order = { overdue: 0, none: 1, ok: 2 };
+    if (order[sa] !== order[sb]) return order[sa] - order[sb];
+    if (da === null && db === null) return a.name.localeCompare(b.name);
+    if (da === null) return -1;
+    if (db === null) return 1;
+    return db - da;
+  });
+
+  // list count
+  document.getElementById('listCount').textContent =
+    list.length === 0 ? '' :
+    `${list.length} persona${list.length !== 1 ? 's' : ''} — ordenadas por urgencia`;
+
+  if (list.length === 0) {
+    container.innerHTML = `
+      <div class="empty-state">
+        <h3>${state.people.length === 0 ? 'Todavía no hay personas' : 'Sin resultados'}</h3>
+        <p>${state.people.length === 0
+          ? 'Usá el botón <strong>+ Persona</strong> para agregar a alguien.'
+          : 'Probá otro filtro o término de búsqueda.'}</p>
+      </div>`;
+    return;
+  }
+
+  container.innerHTML = list.map(p => {
+    const status  = personStatus(p);
+    const last    = lastAssignment(p);
+    const days    = personDays(p);
+    const barPct  = days !== null ? Math.min(100, (days / BAR_MAX_DAYS) * 100) : 0;
+    const count   = (p.assignments || []).length;
+
+    const daysDisplay = days === null ? '—' : days === 0 ? 'Hoy' : `${days}`;
+    const daysUnit    = days === null ? '' : days === 0 ? '' : days === 1 ? 'día' : 'días';
+
+    const lastText = last
+      ? `${esc(last.type)} · ${fmtDate(last.date)}`
+      : 'Sin asignaciones registradas';
+
+    const chipLabel = status === 'overdue' ? '⚠ Vencido' :
+                      status === 'ok'      ? '✓ Al día'  : '○ Sin asignación';
+    const chipClass = `chip-${status}`;
+
+    return `
+      <div class="person-card s-${status}">
+        <div class="card-top">
+          <div style="flex:1;min-width:0">
+            <div class="person-name">${esc(p.name)}</div>
+            <div class="person-last">Última: ${lastText}</div>
+            <span class="status-chip ${chipClass}">${chipLabel}</span>
+          </div>
+          <div class="days-badge">
+            <div class="days-num">${daysDisplay}</div>
+            <div class="days-unit">${daysUnit}</div>
+          </div>
+        </div>
+
+        <div class="bar-wrap">
+          <div class="bar-track">
+            <div class="bar-fill" style="width:${barPct}%"></div>
+            ${days !== null ? '<div class="bar-marker"></div>' : ''}
+          </div>
+        </div>
+
+        <div class="card-actions">
+          <button class="btn-sm btn-edit" onclick="openEditPerson('${p.id}')">✎ Editar</button>
+          ${count > 0
+            ? `<button class="btn-sm btn-hist" onclick="openHistory('${p.id}')">📋 ${count} asig.</button>`
+            : ''}
+          <button class="btn-sm btn-assign" onclick="openAssign('${p.id}')">+ Asignación</button>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function render() {
+  renderStats();
+  renderList();
+}
+
+// ──────────────────────────────────────────────────
+//  MODAL: PERSONA
+// ──────────────────────────────────────────────────
+function openAddPerson() {
+  editingId = null;
+  document.getElementById('mPersonTitle').textContent = 'Nueva Persona';
+  document.getElementById('personName').value = '';
+  document.getElementById('btnDeletePerson').style.display = 'none';
+  showModal('modalPerson');
+  setTimeout(() => document.getElementById('personName').focus(), 120);
+}
+
+function openEditPerson(id) {
+  const p = state.people.find(x => x.id === id);
+  if (!p) return;
+  editingId = id;
+  document.getElementById('mPersonTitle').textContent = 'Editar Persona';
+  document.getElementById('personName').value = p.name;
+  document.getElementById('btnDeletePerson').style.display = 'block';
+  showModal('modalPerson');
+  setTimeout(() => document.getElementById('personName').focus(), 120);
+}
+
+document.getElementById('btnSavePerson').addEventListener('click', () => {
+  const name = document.getElementById('personName').value.trim();
+  if (!name) { document.getElementById('personName').focus(); return; }
+
+  if (editingId) {
+    const p = state.people.find(x => x.id === editingId);
+    if (p) p.name = name;
+    toast('Persona actualizada');
+  } else {
+    state.people.push({ id: uid(), name, assignments: [] });
+    toast('Persona agregada');
+  }
+  saveData(); render(); closeModal('modalPerson');
+});
+
+document.getElementById('btnDeletePerson').addEventListener('click', () => {
+  if (!editingId) return;
+  const p = state.people.find(x => x.id === editingId);
+  if (!p || !confirm(`¿Eliminar a ${p.name} y todo su historial? Esta acción no se puede deshacer.`)) return;
+  state.people = state.people.filter(x => x.id !== editingId);
+  saveData(); render(); closeModal('modalPerson');
+  toast('Persona eliminada');
+});
+
+document.getElementById('personName').addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('btnSavePerson').click();
+});
+
+// ──────────────────────────────────────────────────
+//  MODAL: ASIGNACIÓN
+// ──────────────────────────────────────────────────
+function openAssign(personId) {
+  const p = state.people.find(x => x.id === personId);
+  if (!p) return;
+  assigningId = personId;
+  document.getElementById('mAssignTitle').textContent = `Asignación · ${p.name}`;
+  document.getElementById('aDate').value = todayStr();
+  document.getElementById('aType').value = 'Lectura de la Biblia';
+  document.getElementById('aNotes').value = '';
+  showModal('modalAssign');
+}
+
+document.getElementById('btnSaveAssign').addEventListener('click', () => {
+  const date  = document.getElementById('aDate').value;
+  const type  = document.getElementById('aType').value;
+  const notes = document.getElementById('aNotes').value.trim();
+
+  if (!date) { alert('Por favor seleccioná una fecha.'); return; }
+
+  const p = state.people.find(x => x.id === assigningId);
+  if (!p) return;
+
+  p.assignments.push({ id: uid(), date, type, notes });
+  saveData(); render(); closeModal('modalAssign');
+  toast('Asignación registrada');
+});
+
+// ──────────────────────────────────────────────────
+//  MODAL: HISTORIAL
+// ──────────────────────────────────────────────────
+function openHistory(personId) {
+  const p = state.people.find(x => x.id === personId);
+  if (!p) return;
+  historyId = personId;
+  document.getElementById('mHistTitle').textContent = `Historial · ${esc(p.name)}`;
+  refreshHistoryBody(p);
+  showModal('modalHistory');
+}
+
+function refreshHistoryBody(p) {
+  const body = document.getElementById('histBody');
+  const sorted = [...(p.assignments || [])].sort((a,b) => b.date.localeCompare(a.date));
+
+  if (!sorted.length) {
+    body.innerHTML = '<p style="color:var(--text-muted);text-align:center;padding:2rem 1rem">Sin asignaciones registradas.</p>';
+    return;
+  }
+
+  body.innerHTML = sorted.map(a => `
+    <div class="hist-item">
+      <div>
+        <div class="hist-date">${fmtDate(a.date)}</div>
+        <div class="hist-type">${esc(a.type)}</div>
+        ${a.notes ? `<div class="hist-notes">${esc(a.notes)}</div>` : ''}
+      </div>
+      <button class="btn-del-hist" title="Eliminar esta asignación"
+        onclick="deleteAssignment('${p.id}','${a.id}')">🗑</button>
+    </div>`).join('');
+}
+
+function deleteAssignment(personId, assignId) {
+  if (!confirm('¿Eliminar esta asignación?')) return;
+  const p = state.people.find(x => x.id === personId);
+  if (!p) return;
+  p.assignments = p.assignments.filter(a => a.id !== assignId);
+  saveData(); render();
+  refreshHistoryBody(p); // update without closing modal
+  toast('Asignación eliminada');
+}
+
+// ──────────────────────────────────────────────────
+//  EXPORT / IMPORT
+// ──────────────────────────────────────────────────
+document.getElementById('btnExport').addEventListener('click', () => {
+  const data = JSON.stringify({ people: state.people }, null, 2);
+  const blob = new Blob([data], { type: 'application/json' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url;
+  a.download = `asignaciones_${todayStr()}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  toast('Datos exportados como JSON');
+});
+
+document.getElementById('btnImport').addEventListener('click', () => {
+  document.getElementById('fileImport').click();
+});
+
+document.getElementById('fileImport').addEventListener('change', e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      const parsed = JSON.parse(ev.target.result);
+      if (!Array.isArray(parsed.people)) throw new Error('Formato inválido');
+      if (!confirm(`¿Importar ${parsed.people.length} personas? Esto reemplazará los ${state.people.length} registros actuales.`)) return;
+      state.people = parsed.people;
+      saveData(); render();
+      toast(`${state.people.length} personas importadas`);
+    } catch {
+      alert('El archivo no tiene el formato correcto. Asegurate de importar un JSON exportado desde esta aplicación.');
+    }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+});
+
+// ──────────────────────────────────────────────────
+//  MODAL HELPERS
+// ──────────────────────────────────────────────────
+function showModal(id) {
+  document.getElementById(id).style.display = 'flex';
+}
+function closeModal(id) {
+  document.getElementById(id).style.display = 'none';
+}
+
+// close buttons
+document.querySelectorAll('[data-close]').forEach(btn => {
+  btn.addEventListener('click', () => closeModal(btn.dataset.close));
+});
+
+// click overlay to close
+['modalPerson','modalAssign','modalHistory'].forEach(id => {
+  document.getElementById(id).addEventListener('click', function(e) {
+    if (e.target === this) closeModal(id);
+  });
+});
+
+// ──────────────────────────────────────────────────
+//  FILTER TABS
+// ──────────────────────────────────────────────────
+document.querySelectorAll('.tab').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    state.filter = btn.dataset.filter;
+    renderList();
+  });
+});
+
+// ──────────────────────────────────────────────────
+//  SEARCH
+// ──────────────────────────────────────────────────
+document.getElementById('searchInput').addEventListener('input', e => {
+  state.search = e.target.value;
+  renderList();
+});
+
+// ──────────────────────────────────────────────────
+//  TOAST
+// ──────────────────────────────────────────────────
+function toast(msg) {
+  document.querySelector('.toast')?.remove();
+  const t = document.createElement('div');
+  t.className = 'toast';
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 2600);
+}
+
+// ──────────────────────────────────────────────────
+//  INIT
+// ──────────────────────────────────────────────────
+document.getElementById('btnAddPerson').addEventListener('click', openAddPerson);
+
+loadData();
+render();
+</script>
+</body>
+</html>

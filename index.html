@@ -571,6 +571,72 @@
       color: var(--text-muted);
     }
 
+    /* ── Compañeros recientes (modal asignación) ── */
+    .companions-box {
+      background: #FFFBF0;
+      border: 1.5px solid #E8D4A0;
+      border-radius: 8px;
+      padding: .65rem .9rem;
+      margin-bottom: .9rem;
+    }
+    .companions-title {
+      font-size: .68rem;
+      font-weight: 700;
+      color: #7A5500;
+      text-transform: uppercase;
+      letter-spacing: .07em;
+      margin-bottom: .4rem;
+    }
+    .companion-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: .22rem 0;
+      border-bottom: 1px solid rgba(232,212,160,.45);
+    }
+    .companion-item:last-child { border-bottom: none; }
+    .companion-name { font-size: .8rem; font-weight: 600; color: var(--text); }
+    .companion-days { font-size: .73rem; color: var(--text-muted); }
+
+    /* ── Advertencia de ayudante repetido ───────── */
+    .helper-warning {
+      margin-top: .4rem;
+      padding: .38rem .7rem;
+      border-radius: 6px;
+      font-size: .78rem;
+      line-height: 1.4;
+    }
+    .helper-warning--alert {
+      background: var(--red-bg);
+      color: #9A2D22;
+      border: 1px solid #F5C6C1;
+    }
+    .helper-warning--note {
+      background: #FFFBF0;
+      color: #7A5500;
+      border: 1px solid #E8D4A0;
+    }
+
+    /* ── Rol en historial ───────────────────────── */
+    .hist-role-badge {
+      display: inline-block;
+      font-size: .63rem;
+      font-weight: 700;
+      padding: .1rem .45rem;
+      border-radius: 10px;
+      text-transform: uppercase;
+      letter-spacing: .03em;
+      vertical-align: middle;
+    }
+    .role-speaker { background: rgba(26,39,68,.09); color: var(--navy); }
+    .role-helper  { background: var(--green-bg); color: var(--green); }
+    .hist-partner {
+      font-size: .77rem;
+      color: var(--navy-light);
+      font-weight: 600;
+      margin-top: .18rem;
+    }
+
     /* ── Responsive ─────────────────────────────── */
     @media (max-width: 480px) {
       .app-header { padding: 0 1rem; }
@@ -666,6 +732,13 @@
       <button class="modal-close" data-close="modalAssign">✕</button>
     </div>
     <div class="modal-body">
+
+      <!-- Compañeros recientes (anti-repetición) -->
+      <div id="recentCompanions" class="companions-box" style="display:none">
+        <div class="companions-title">📋 Compañeros recientes de esta persona</div>
+        <div id="companionsList"></div>
+      </div>
+
       <div class="form-group">
         <label class="form-label" for="aDate">Fecha de la asignación</label>
         <input type="date" class="form-input" id="aDate">
@@ -682,6 +755,16 @@
           <option value="Otro">Otro</option>
         </select>
       </div>
+
+      <!-- Ayudante — se oculta para Lectura de la Biblia -->
+      <div id="helperGroup" class="form-group" style="display:none">
+        <label class="form-label" for="aHelper">Ayudante</label>
+        <select class="form-select" id="aHelper">
+          <option value="">— Sin ayudante —</option>
+        </select>
+        <div id="helperWarning" class="helper-warning" style="display:none"></div>
+      </div>
+
       <div class="form-group">
         <label class="form-label" for="aNotes">Notas (opcional)</label>
         <textarea class="form-textarea" id="aNotes" placeholder="Ej: punto 2, capítulo 3..."></textarea>
@@ -781,6 +864,29 @@ function esc(str) {
     .replace(/"/g,'&quot;');
 }
 
+// Rol: speaker = orador, helper = ayudante, solo = solo (lectura)
+function roleIcon(role) {
+  if (role === 'speaker') return '📢';
+  if (role === 'helper')  return '🤝';
+  return '📖';
+}
+function roleLabel(role) {
+  if (role === 'speaker') return 'Orador';
+  if (role === 'helper')  return 'Ayudante';
+  return '';
+}
+
+// Últimos compañeros únicos de una persona (más recientes primero)
+function getRecentCompanions(person, n = 6) {
+  const seen = new Set();
+  return (person.assignments || [])
+    .filter(a => a.partnerId && a.partnerName)
+    .sort((a, b) => b.date.localeCompare(a.date))
+    .filter(a => { if (seen.has(a.partnerId)) return false; seen.add(a.partnerId); return true; })
+    .slice(0, n)
+    .map(a => ({ partnerId: a.partnerId, partnerName: a.partnerName, date: a.date, days: daysSince(a.date) }));
+}
+
 // ──────────────────────────────────────────────────
 //  RENDER
 // ──────────────────────────────────────────────────
@@ -849,9 +955,13 @@ function renderList() {
     const daysDisplay = days === null ? '—' : days === 0 ? 'Hoy' : `${days}`;
     const daysUnit    = days === null ? '' : days === 0 ? '' : days === 1 ? 'día' : 'días';
 
-    const lastText = last
-      ? `${esc(last.type)} · ${fmtDate(last.date)}`
-      : 'Sin asignaciones registradas';
+    // Línea de última asignación: ícono de rol + tipo + fecha + compañero
+    let lastText = 'Sin asignaciones registradas';
+    if (last) {
+      const ri = last.role ? roleIcon(last.role) + ' ' : '';
+      const partner = last.partnerName ? ` · con ${esc(last.partnerName)}` : '';
+      lastText = `${ri}${esc(last.type)} · ${fmtDate(last.date)}${partner}`;
+    }
 
     const chipLabel = status === 'overdue' ? '⚠ Vencido' :
                       status === 'ok'      ? '✓ Al día'  : '○ Sin asignación';
@@ -862,7 +972,7 @@ function renderList() {
         <div class="card-top">
           <div style="flex:1;min-width:0">
             <div class="person-name">${esc(p.name)}</div>
-            <div class="person-last">Última: ${lastText}</div>
+            <div class="person-last">${lastText}</div>
             <span class="status-chip ${chipClass}">${chipLabel}</span>
           </div>
           <div class="days-badge">
@@ -954,24 +1064,124 @@ function openAssign(personId) {
   assigningId = personId;
   document.getElementById('mAssignTitle').textContent = `Asignación · ${p.name}`;
   document.getElementById('aDate').value = todayStr();
-  document.getElementById('aType').value = 'Lectura de la Biblia';
+  const typeEl = document.getElementById('aType');
+  typeEl.value = 'Lectura de la Biblia';
   document.getElementById('aNotes').value = '';
+  document.getElementById('helperWarning').style.display = 'none';
+
+  // Ocultar/mostrar ayudante según tipo inicial
+  toggleHelperGroup(typeEl.value);
+
+  // Poblar el select de ayudante con todos menos la persona actual
+  const sel = document.getElementById('aHelper');
+  sel.innerHTML = '<option value="">— Sin ayudante —</option>';
+  [...state.people]
+    .filter(x => x.id !== personId)
+    .sort((a, b) => a.name.localeCompare(b.name))
+    .forEach(q => {
+      const opt = document.createElement('option');
+      opt.value = q.id;
+      opt.textContent = q.name;
+      sel.appendChild(opt);
+    });
+  sel.value = '';
+
+  // Mostrar compañeros recientes para evitar repetir pares
+  renderRecentCompanions(p);
+
   showModal('modalAssign');
 }
 
+function toggleHelperGroup(type) {
+  const grp = document.getElementById('helperGroup');
+  if (type === 'Lectura de la Biblia') {
+    grp.style.display = 'none';
+    document.getElementById('aHelper').value = '';
+    document.getElementById('helperWarning').style.display = 'none';
+  } else {
+    grp.style.display = 'block';
+  }
+}
+
+function renderRecentCompanions(person) {
+  const box  = document.getElementById('recentCompanions');
+  const list = document.getElementById('companionsList');
+  const companions = getRecentCompanions(person, 5);
+  if (!companions.length) { box.style.display = 'none'; return; }
+  box.style.display = 'block';
+  list.innerHTML = companions.map(c => {
+    const dStr = c.days === 0 ? 'hoy' : `hace ${c.days} día${c.days !== 1 ? 's' : ''}`;
+    return `<div class="companion-item">
+      <span class="companion-name">${esc(c.partnerName)}</span>
+      <span class="companion-days">${dStr}</span>
+    </div>`;
+  }).join('');
+}
+
+// Cambio de tipo → mostrar/ocultar ayudante
+document.getElementById('aType').addEventListener('change', function() {
+  toggleHelperGroup(this.value);
+});
+
+// Cambio de ayudante → advertir si fue compañero reciente
+document.getElementById('aHelper').addEventListener('change', function() {
+  const helperId = this.value;
+  const warn = document.getElementById('helperWarning');
+  if (!helperId) { warn.style.display = 'none'; return; }
+
+  const mainPerson = state.people.find(x => x.id === assigningId);
+  const recent = mainPerson ? getRecentCompanions(mainPerson, 10).find(c => c.partnerId === helperId) : null;
+
+  if (recent) {
+    const name = this.options[this.selectedIndex].text;
+    const dStr = recent.days === 0 ? 'hoy' : `hace ${recent.days} día${recent.days !== 1 ? 's' : ''}`;
+    warn.style.display = 'block';
+    warn.innerHTML = `⚠ <strong>${esc(name)}</strong> ya fue compañero/a de <strong>${esc(mainPerson.name)}</strong> ${dStr}`;
+    warn.className = recent.days < OVERDUE_DAYS
+      ? 'helper-warning helper-warning--alert'
+      : 'helper-warning helper-warning--note';
+  } else {
+    warn.style.display = 'none';
+  }
+});
+
 document.getElementById('btnSaveAssign').addEventListener('click', () => {
-  const date  = document.getElementById('aDate').value;
-  const type  = document.getElementById('aType').value;
-  const notes = document.getElementById('aNotes').value.trim();
+  const date     = document.getElementById('aDate').value;
+  const type     = document.getElementById('aType').value;
+  const notes    = document.getElementById('aNotes').value.trim();
+  const helperId = document.getElementById('aHelper').value;
 
   if (!date) { alert('Por favor seleccioná una fecha.'); return; }
 
-  const p = state.people.find(x => x.id === assigningId);
-  if (!p) return;
+  const mainPerson = state.people.find(x => x.id === assigningId);
+  if (!mainPerson) return;
 
-  p.assignments.push({ id: uid(), date, type, notes });
+  const helper  = helperId ? state.people.find(x => x.id === helperId) : null;
+  const groupId = uid(); // id compartido para vincular ambas entradas
+
+  // Entrada del orador principal
+  mainPerson.assignments.push({
+    id: uid(), groupId, date, type, notes,
+    role:        helper ? 'speaker' : 'solo',
+    partnerId:   helper ? helper.id   : null,
+    partnerName: helper ? helper.name : null
+  });
+
+  // Entrada del ayudante (si hay), vinculada al mismo groupId
+  if (helper) {
+    helper.assignments.push({
+      id: uid(), groupId, date, type, notes,
+      role:        'helper',
+      partnerId:   mainPerson.id,
+      partnerName: mainPerson.name
+    });
+  }
+
   saveData(); render(); closeModal('modalAssign');
-  toast('Asignación registrada');
+  const msg = helper
+    ? `Registrado para ${mainPerson.name} y ${helper.name}`
+    : 'Asignación registrada';
+  toast(msg);
 });
 
 // ──────────────────────────────────────────────────
@@ -995,26 +1205,56 @@ function refreshHistoryBody(p) {
     return;
   }
 
-  body.innerHTML = sorted.map(a => `
+  body.innerHTML = sorted.map(a => {
+    const rl = a.role && a.role !== 'solo'
+      ? `<span class="hist-role-badge role-${a.role}">${roleIcon(a.role)} ${roleLabel(a.role)}</span>`
+      : '';
+    const partnerLine = a.partnerName
+      ? `<div class="hist-partner">👤 Con ${esc(a.partnerName)}</div>`
+      : '';
+    return `
     <div class="hist-item">
-      <div>
-        <div class="hist-date">${fmtDate(a.date)}</div>
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;align-items:center;gap:.4rem;flex-wrap:wrap">
+          <span class="hist-date">${fmtDate(a.date)}</span>
+          ${rl}
+        </div>
         <div class="hist-type">${esc(a.type)}</div>
+        ${partnerLine}
         ${a.notes ? `<div class="hist-notes">${esc(a.notes)}</div>` : ''}
       </div>
       <button class="btn-del-hist" title="Eliminar esta asignación"
         onclick="deleteAssignment('${p.id}','${a.id}')">🗑</button>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 
 function deleteAssignment(personId, assignId) {
-  if (!confirm('¿Eliminar esta asignación?')) return;
   const p = state.people.find(x => x.id === personId);
   if (!p) return;
-  p.assignments = p.assignments.filter(a => a.id !== assignId);
+  const a = p.assignments.find(x => x.id === assignId);
+  if (!a) return;
+
+  const partnerName = a.partnerName || '';
+  const msg = partnerName
+    ? `¿Eliminar esta asignación?\nTambién se eliminará del historial de ${partnerName}.`
+    : '¿Eliminar esta asignación?';
+  if (!confirm(msg)) return;
+
+  // Eliminar de la persona actual
+  p.assignments = p.assignments.filter(x => x.id !== assignId);
+
+  // Eliminar la entrada vinculada del compañero (mismo groupId)
+  if (a.groupId && a.partnerId) {
+    const partner = state.people.find(x => x.id === a.partnerId);
+    if (partner) {
+      partner.assignments = partner.assignments.filter(x => x.groupId !== a.groupId);
+    }
+  }
+
   saveData(); render();
-  refreshHistoryBody(p); // update without closing modal
-  toast('Asignación eliminada');
+  refreshHistoryBody(p);
+  toast('Asignación eliminada' + (partnerName ? ` (y de ${partnerName})` : ''));
 }
 
 // ──────────────────────────────────────────────────
